@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CRISPR Guardian (Simulation) | Educational Off-Target Demo</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.32.0/plotly.min.js"></script>
+<style>
+:root{
+--bg-dark:#090D1A;
+--card-bg:#131A35;
+--cyan:#00F2FE;
+--green:#32C766;
+--amber:#FFB300;
+--red:#FF3366;
+--text-muted:#8A99AD;
+}
+*{box-sizing:border-box;}
+html,body{
+margin:0;
+padding:0;
+background-color:var(--bg-dark);
+color:#FFFFFF;
+font-family:'Inter','Segoe UI',-apple-system,sans-serif;
+}
+a{color:var(--cyan);}
+.wrap{
+max-width:1280px;
+margin:0 auto;
+padding:28px 32px 60px;
+}
+.banner{
+background:rgba(255,179,0,0.08);
+border:1px solid rgba(255,179,0,0.35);
+border-radius:8px;
+padding:14px 18px;
+font-size:0.85rem;
+color:#FFE3A6;
+line-height:1.5;
+margin-bottom:24px;
+}
+.banner strong{color:var(--amber);}
+.hero-title{
+font-size:2.6rem;
+font-weight:800;
+background:linear-gradient(90deg,#FFFFFF 0%, var(--cyan) 50%, var(--green) 100%);
+-webkit-background-clip:text;
+-webkit-text-fill-color:transparent;
+letter-spacing:-0.03rem;
+margin:0 0 6px 0;
+}
+.hero-sub{
+font-size:1.1rem;
+color:var(--text-muted);
+margin:0 0 22px 0;
+}
+.kpi-grid{
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:16px;
+margin-bottom:28px;
+}
+@media (max-width:900px){ .kpi-grid{grid-template-columns:repeat(2,1fr);} }
+.metric-card{
+background:linear-gradient(135deg, rgba(19,26,53,0.7) 0%, rgba(25,36,74,0.4) 100%);
+border:1px solid rgba(0,242,254,0.15);
+border-radius:12px;
+padding:20px;
+box-shadow:0 8px 32px 0 rgba(0,0,0,0.37);
+transition:transform .3s ease, border-color .3s ease;
+}
+.metric-card:hover{
+transform:translateY(-4px);
+border-color:var(--cyan);
+box-shadow:0 12px 40px 0 rgba(0,242,254,.15);
+}
+.metric-label{
+color:var(--text-muted);
+font-size:.78rem;
+font-weight:700;
+text-transform:uppercase;
+letter-spacing:.05rem;
+}
+.metric-value{
+color:#FFF;
+font-size:1.9rem;
+font-weight:800;
+margin-top:6px;
+}
+.metric-note{
+font-size:.8rem;
+margin-top:4px;
+}
+.layout{
+display:grid;
+grid-template-columns:260px 1fr;
+gap:24px;
+}
+@media (max-width:900px){ .layout{grid-template-columns:1fr;} }
+
+/* sidebar */
+.sidebar{
+background:rgba(19,26,53,0.45);
+border:1px solid rgba(255,255,255,0.06);
+border-radius:12px;
+padding:18px;
+align-self:start;
+}
+.sidebar h2{
+text-align:center;
+margin:6px 0 2px;
+font-size:1.2rem;
+}
+.sidebar .build-tag{
+text-align:center;
+color:var(--text-muted);
+font-size:.75rem;
+margin-bottom:14px;
+}
+.sidebar hr{border-color:rgba(255,255,255,0.1); border-style:solid;}
+.lbl-muted{
+color:var(--text-muted);
+font-size:.78rem;
+text-transform:uppercase;
+letter-spacing:.08rem;
+margin-top:18px;
+margin-bottom:6px;
+}
+select, input[type=text], textarea{
+width:100%;
+background:#0E1530;
+color:#FFF;
+border:1px solid rgba(255,255,255,0.12);
+border-radius:8px;
+padding:9px 10px;
+font-size:.9rem;
+font-family:inherit;
+}
+select:focus, input:focus, textarea:focus{
+outline:2px solid var(--cyan);
+outline-offset:1px;
+}
+details{
+background:rgba(255,255,255,0.03);
+border:1px solid rgba(255,255,255,0.08);
+border-radius:8px;
+padding:8px 12px;
+margin-top:10px;
+font-size:.85rem;
+color:#E2E8F0;
+}
+details summary{cursor:pointer; font-weight:600; color:#FFF;}
+details ul{margin:8px 0 4px 18px; padding:0; line-height:1.5;}
+.footer-note{
+text-align:center;
+color:var(--text-muted);
+font-size:.72rem;
+margin-top:22px;
+line-height:1.4;
+}
+
+/* tabs layout */
+.tabbar{
+display:flex;
+flex-wrap:wrap;
+gap:8px;
+background:rgba(19,26,53,0.5);
+border:1px solid rgba(255,255,255,0.05);
+padding:8px;
+border-radius:12px;
+margin-bottom:18px;
+}
+.tab-btn{
+background:transparent;
+border:none;
+color:#FFF;
+font-weight:600;
+font-size:.85rem;
+font-family:inherit;
+border-radius:8px;
+padding:10px 14px;
+cursor:pointer;
+transition:all .15s ease-in-out;
+display:flex;
+align-items:center;
+gap:6px;
+}
+.tab-btn:hover{ background:rgba(0,242,254,0.1); color:var(--cyan); }
+.tab-btn.active{
+background:var(--cyan);
+color:var(--bg-dark);
+font-weight:700;
+box-shadow:0 4px 14px 0 rgba(0,242,254,0.4);
+}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+.panel-card{
+background:var(--card-bg);
+border:1px solid rgba(255,255,255,0.05);
+border-radius:12px;
+padding:18px;
+margin-bottom:20px;
+}
+.col-1-2{ display:grid; grid-template-columns:1fr 2fr; gap:20px; }
+@media (max-width:900px){ .col-1-2{grid-template-columns:1fr;} }
+.col-2-1{ display:grid; grid-template-columns:2fr 1fr; gap:20px; }
+@media (max-width:900px){ .col-2-1{grid-template-columns:1fr;} }
+
+label.field-label{ display:block; font-size:.8rem; color:var(--text-muted); margin-bottom:5px; margin-top:12px; }
+
+.btn-primary{
+background:var(--cyan);
+color:var(--bg-dark);
+border:none;
+font-weight:700;
+font-size:.9rem;
+padding:11px 18px;
+border-radius:8px;
+cursor:pointer;
+width:100%;
+margin-top:14px;
+}
+.btn-primary:disabled{ opacity:.4; cursor:not-allowed; }
+.btn-primary:hover:not(:disabled){ box-shadow:0 4px 18px rgba(0,242,254,.4); }
+
+.err-box{
+background:rgba(255,51,102,0.1);
+border:1px solid var(--red);
+color:#FFD6E0;
+padding:10px 12px;
+border-radius:6px;
+font-size:.85rem;
+margin-top:10px;
+}
+
+.risk-badge{
+padding:6px 14px; border-radius:20px; font-weight:700; font-size:.85rem; display:inline-block;
+}
+.badge-low{ background:rgba(50,199,102,0.15); color:var(--green); border:1px solid var(--green); }
+.badge-med{ background:rgba(255,179,0,0.15); color:var(--amber); border:1px solid var(--amber); }
+.badge-high{ background:rgba(255,51,102,0.15); color:var(--red); border:1px solid var(--red); }
+
+.diag-box{
+margin-top:14px; padding:14px; background:rgba(0,242,254,0.03);
+border-left:4px solid var(--cyan); border-radius:4px; font-size:.9rem; color:#E2E8F0;
+}
+.diag-box b{color:#FFF;}
+
+.pam-badge{
+display:inline-flex; align-items:center; gap:8px;
+padding:8px 14px; border-radius:8px; font-size:.85rem; font-weight:600;
+width:100%; box-sizing:border-box;
+}
+.pam-badge.valid{ background:rgba(50,199,102,0.12); border:1px solid var(--green); color:#D6FFE4; }
+.pam-badge.invalid{ background:rgba(255,51,102,0.12); border:1px solid var(--red); color:#FFD6E0; }
+.pam-badge code{
+background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px; font-family:monospace;
+}
+
+.mismatch-strip{
+display:flex; flex-wrap:wrap; gap:4px; margin-top:8px;
+}
+.mismatch-base{
+width:34px; height:34px; display:flex; flex-direction:column; align-items:center; justify-content:center;
+border-radius:6px; font-family:monospace; font-size:.85rem; font-weight:700;
+border:1px solid rgba(255,255,255,0.1);
+}
+.mismatch-base.match{ background:rgba(50,199,102,0.1); color:var(--green); }
+.mismatch-base.mismatch{ background:rgba(255,51,102,0.18); color:#FFD6E0; border-color:var(--red); }
+.mismatch-base .pos-label{ font-size:.55rem; color:var(--text-muted); font-weight:400; margin-top:1px; }
+
+.rank-pill{
+display:flex; flex-direction:column; padding:12px 16px; border-radius:8px; cursor:pointer;
+font-family:inherit; border:1px solid rgba(255,255,255,0.1);
+transition:transform .12s ease, border-color .12s ease;
+}
+.rank-pill:hover{ transform:translateY(-2px); border-color:var(--cyan); }
+.rank-pill.safe{ background:rgba(50,199,102,0.06); border-left:4px solid var(--green); }
+.rank-pill.medium{ background:rgba(255,179,0,0.06); border-left:4px solid var(--amber); }
+.rank-pill.risky{ background:rgba(255,51,102,0.06); border-left:4px solid var(--red); }
+.rank-pill .rank-num { font-weight: 800; color: var(--cyan); }
+
+/* Heatmap Grid Cell Styles */
+.matrix-grid {
+display: grid;
+grid-template-columns: repeat(20, 1fr);
+gap: 4px;
+margin-top: 16px;
+background: #090D1A;
+padding: 10px;
+border-radius: 8px;
+}
+.matrix-cell {
+aspect-ratio: 1;
+border-radius: 4px;
+display: flex;
+align-items: center;
+justify-content: center;
+font-size: 0.65rem;
+font-weight: bold;
+color: rgba(255,255,255,0.8);
+transition: transform 0.15s;
+}
+.matrix-cell:hover {
+transform: scale(1.2);
+z-index: 10;
+box-shadow: 0 0 8px #00F2FE;
+}
+
+/* Pipeline Track Animation Styles */
+.pipe-container {
+margin-top: 20px;
+background: #0E1530;
+border: 1px solid rgba(255,255,255,0.05);
+border-radius: 12px;
+padding: 24px;
+position: relative;
+overflow: hidden;
+}
+.pipe-line {
+position: absolute;
+top: 50%; left: 0; right: 0;
+height: 4px;
+background: rgba(255,255,255,0.1);
+transform: translateY(-50%);
+z-index: 1;
+}
+.pipe-progress {
+position: absolute;
+top: 50%; left: 0; width: 0%;
+height: 4px;
+background: linear-gradient(90deg, var(--cyan), var(--green));
+transform: translateY(-50%);
+z-index: 2;
+transition: width 0.1s linear;
+}
+.pipe-nodes {
+display: flex;
+justify-content: space-between;
+position: relative;
+z-index: 3;
+}
+.pipe-node {
+background: #131A35;
+border: 2px solid rgba(255,255,255,0.2);
+width: 50px; height: 50px;
+border-radius: 50%;
+display: flex;
+align-items: center;
+justify-content: center;
+font-size: 1.2rem;
+transition: all 0.4s ease;
+}
+.pipe-node.active {
+border-color: var(--cyan);
+background: #00F2FE;
+color: #090D1A;
+box-shadow: 0 0 20px var(--cyan);
+}
+.pipe-node.completed {
+border-color: var(--green);
+background: var(--green);
+color: #090D1A;
+}
+
+.small-muted{ color:var(--text-muted); font-size:.78rem; }
+.plot-box{ width:100%; }
+h3.section-h{ margin-top:0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="banner">
+<strong>About this demo:</strong> CRISPR Guardian is an educational UI simulation. Every score, model name, and "hotspot" on this page comes from a deterministic placeholder formula seeded by character codes — there is no trained Random Forest, XGBoost, or Transformer model behind it. Do not use this tool for real gene-editing risk decisions. Real off-target assessment requires wet-lab verification (e.g. GUIDE-seq, mass spectrometry) and validated, peer-reviewed software.
+</div>
+
+<h1 class="hero-title">CRISPR Guardian <span style="font-size:1.2rem;color:var(--text-muted);font-weight:600;">(Simulation)</span></h1>
+<p class="hero-sub">A teaching demo illustrating how an off-target gene-editing risk dashboard might be structured — all outputs are simulated, not predicted.</p>
+<p id="backendStatus" style="font-size:.8rem; font-weight:700; margin:-6px 0 18px; color:var(--amber);">● Checking backend connection…</p>
+
+<div class="kpi-grid">
+<div class="metric-card">
+<div class="metric-label">Total Sequences Logged (Demo Data)</div>
+<div class="metric-value" id="kpiTotal">3,142</div>
+<div class="metric-note" style="color:var(--green);">▲ Synthetic batch trend</div>
+</div>
+<div class="metric-card">
+<div class="metric-label">Average Simulated Risk Score</div>
+<div class="metric-value" id="kpiAvgRisk">42.5%</div>
+<div class="metric-note" style="color:var(--cyan);">▼ Synthetic trend, no real meaning</div>
+</div>
+<div class="metric-card">
+<div class="metric-label">Demo Hotspot Count (Hardcoded)</div>
+<div class="metric-value">1,482 Total</div>
+<div class="metric-note" style="color:var(--red);">■ Fixed placeholder values</div>
+</div>
+<div class="metric-card">
+<div class="metric-label">Formula "Confidence" (Not Real)</div>
+<div class="metric-value">N/A</div>
+<div class="metric-note" style="color:var(--text-muted);">No statistical validation exists</div>
+</div>
+</div>
+
+<div class="layout">
+<div class="sidebar">
+<div style="text-align:center;">
+<span style="font-size:3rem;">🧬</span>
+<h2>CONTROL PANEL</h2>
+<div class="build-tag">Demo build — simulation only</div>
+</div>
+<hr/>
+<div class="lbl-muted">Demo Context</div>
+<select id="sbProject">
+<option>Demo Context A — Therapeutics Walkthrough</option>
+<option>Demo Context B — Oncology Walkthrough</option>
+<option>Demo Context C — Rare Disease Walkthrough</option>
+<option>Demo Context D — Agricultural Walkthrough</option>
+</select>
+
+<details>
+<summary>🔬 What this demo does NOT do</summary>
+<ul>
+<li>No real ML inference (no trained models are loaded or run)</li>
+<li>No connection to CRISPR-Net, GUIDE-seq, or DeepCRISPR datasets</li>
+<li>No wet-lab or clinical validation of any kind</li>
+</ul>
+</details>
+<details>
+<summary>📊 Real datasets that exist (for reference)</summary>
+<ul>
+<li><strong>CRISPR-Net</strong>: published deep-learning off-target dataset</li>
+<li><strong>GUIDE-seq</strong>: empirical genome-wide cut-site method</li>
+<li><strong>DeepCRISPR</strong>: published epigenetic-aware model</li>
+</ul>
+<p class="small-muted">This demo does not use any of these — named for educational context only.</p>
+</details>
+
+<div class="footer-note">Educational sandbox build</div>
+</div>
+
+<div>
+    <div class="tabbar">
+        <button class="tab-btn active" onclick="switchTab('predict-tab')">🎯 Off-Target Risk (Simulated)</button>
+        <button class="tab-btn" onclick="switchTab('comparator-tab')">🧬 Candidate Comparator (Simulated)</button>
+        <button class="tab-btn" onclick="switchTab('matrix-tab')">🧠 Attention-Style Matrix (Decorative)</button>
+        <button class="tab-btn" onclick="switchTab('heatmap-tab')">🗺️ Genome Heatmap (Synthetic)</button>
+        <button class="tab-btn" onclick="switchTab('pipeline-tab')">⚡ Pipeline Animation (Scripted)</button>
+        <button class="tab-btn" onclick="switchTab('analytics-tab')">📈 Demo Analytics</button>
+        <button class="tab-btn" onclick="switchTab('diagram-tab')">⚙️ Pipeline Diagram (Illustrative)</button>
+    </div>
+
+    <div id="predict-tab" class="tab-panel active">
+        <div class="panel-card">
+            <h3 class="section-h">Multi-Term Formula Evaluator (Not a trained model)</h3>
+            <div class="col-1-2">
+                <div>
+                    <label class="field-label">Guide RNA (gRNA) — 20 bp</label>
+                    <input type="text" id="predict_grna" value="GCCAATCGATCGATCGATCG">
+
+                    <label class="field-label">Target DNA Strand Window</label>
+                    <input type="text" id="predict_target" value="GCCAATCGATCGATCGATGG">
+
+                    <button class="btn-primary" onclick="executeSinglePrediction()">Run Simulated Formula</button>
+                    <div id="predictError" class="err-box" style="display:none;"></div>
+                    
+                    <div style="margin-top:20px;">
+                        <div id="pamBadgeContainer"></div>
+                    </div>
+                </div>
+
+                <div class="col-2-1" style="gap:15px;">
+                    <div style="text-align:center; padding:15px; background:rgba(0,0,0,0.2); border-radius:8px;">
+                        <div class="metric-label" id="classificationLabel">CLASSIFICATION (SIMULATED)</div>
+                        <div id="riskBadgeValue" class="risk-badge badge-high" style="margin-top:8px; font-size:1.1rem;">HIGH RISK</div>
+                        <div style="font-size:2.8rem; font-weight:800; margin-top:10px;" id="riskScorePercent">100.0%</div>
+                        <div class="small-muted">Formula-Derived Score (Not Predictive)</div>
+                    </div>
+                    <div>
+                        <div id="gaugePlot" class="plot-box" style="height:200px;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top:20px;">
+                <label class="field-label">Simulated Base Mismatch Profile</label>
+                <div id="mismatchStripContainer" class="mismatch-strip"></div>
+                
+                <div class="diag-box" style="margin-top:15px;">
+                    <b>Simulation Summary Logic:</b> <span id="reasoningText">Formula output metrics calculation pending system initialization sequence.</span>
+                </div>
+                
+                <label class="field-label" style="margin-top:20px;">Variant Metrics Breakdown (Simulated Weighting Distribution)</label>
+                <div id="breakdownPlot" class="plot-box" style="height:160px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="comparator-tab" class="tab-panel">
+        <div class="panel-card">
+            <h3 class="section-h">🧬 Target Candidate Comparator</h3>
+            <p class="small-muted" style="margin-bottom: 16px;">
+                Input multiple target DNA strands (one per line) to rank them from safest to riskiest based on the formula sequence-alignment score. Click any row to inspect metadata parameters.
+            </p>
+
+            <div class="col-1-2">
+                <div>
+                    <label class="field-label">Reference Guide RNA (gRNA)</label>
+                    <input type="text" id="rank_grna" value="GCCAATCGATCGATCGATCG" placeholder="e.g., GCCAATCGATCGATCGATCG">
+
+                    <label class="field-label">Candidate Target Strands (One per line)</label>
+                    <textarea id="rank_candidates" rows="8" placeholder="GCCAATCGATCGATCGATGG&#10;GCCAATCGATCGATCGATCC&#10;ATTGCTAGCTAGCTAGCTAA"></textarea>
+
+                    <button class="btn-primary" id="btnRank" onclick="executeRanking()">Rank Candidates</button>
+                    <div id="rankError" class="err-box" style="display:none;"></div>
+                </div>
+
+                <div>
+                    <label class="field-label">Ranked Output (Safest First)</label>
+                    <div id="rankingListContainer" style="display: flex; flex-direction: column; gap: 10px;">
+                        <p class="small-muted">No candidates submitted yet. Populate sequences and click "Rank Candidates".</p>
+                    </div>
+                    
+                    <div id="candidateDetailCard" class="diag-box" style="display:none; margin-top:16px;">
+                        <h4>Candidate Details</h4>
+                        <div id="candidateDetailContent"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="matrix-tab" class="tab-panel">
+        <div class="panel-card">
+            <h3 class="section-h">🧠 Attention-Style Matrix (Decorative)</h3>
+            <p class="small-muted">Generates a random token coordinate heatmap based on the character ordinals of the source guide parameter. It visualizes a mock sequence binding dependency map.</p>
+            
+            <div style="max-width:420px; margin-top: 10px;">
+                <label class="field-label">Sequence Seed Input</label>
+                <input type="text" id="matrix_seed" value="GCCAATCGATCGATCGATCG" oninput="loadAttentionMatrix()">
+            </div>
+            
+            <div id="matrixGridContainer" class="matrix-grid"></div>
+        </div>
+    </div>
+
+    <div id="heatmap-tab" class="tab-panel">
+        <div class="panel-card">
+            <h3 class="section-h">📊 Genome Coordinate Heatmap Tracker</h3>
+            <p class="small-muted" style="margin-bottom:12px;">Select simulated chromosomes to visualize synthetic simulated hotspot curves generated by random distributions.</p>
+            
+            <div style="max-width:300px; margin-bottom:15px;">
+                <label class="field-label">Target Chromosome Track</label>
+                <select id="chromSelect" onchange="loadGenomeTrack()">
+                    <option value="Chr 1">Chromosome 1</option>
+                    <option value="Chr 7">Chromosome 7</option>
+                    <option value="Chr X">Chromosome X</option>
+                </select>
+            </div>
+
+            <div id="genomePlot" class="plot-box" style="height:320px;"></div>
+            <div class="diag-box">
+                <b>Demonstration Note:</b> Hotspot locations on indices 20, 55, and 82 are explicitly hardcoded markers used to showcase dashboard layout alert synchronization.
+            </div>
+        </div>
+    </div>
+
+    <div id="pipeline-tab" class="tab-panel">
+        <div class="panel-card">
+            <h3 class="section-h">⚡ Pipeline Script Animation Sequence</h3>
+            <p class="small-muted">Simulates tracking step executions for data screening modules.</p>
+            
+            <button class="btn-primary" style="max-width: 200px;" onclick="startPipelineAnimation()">Trigger Job Sequence</button>
+            
+            <div class="pipe-container">
+                <div class="pipe-line"></div>
+                <div class="pipe-progress" id="pipeProgress"></div>
+                <div class="pipe-nodes">
+                    <div class="pipe-node" id="node1">📥</div>
+                    <div class="pipe-node" id="node2">🧬</div>
+                    <div class="pipe-node" id="node3">⚙️</div>
+                    <div class="pipe-node" id="node4">📊</div>
+                </div>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-top:8px; padding:0 4px;" class="small-muted">
+                <span>Ingest File</span>
+                <span>PAM Filter Match</span>
+                <span>Scoring Calculation Matrix</span>
+                <span>Render Analysis Report</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="analytics-tab" class="tab-panel">
+        <div class="panel-card">
+            <h3 class="section-h">📈 System Simulation Performance Analytics</h3>
+            <p class="small-muted">Renders a 100-day rolling aggregate chart using programmatic random-walk datasets generated server-side.</p>
+            <div id="historicalPlot" class="plot-box" style="height:340px;"></div>
+        </div>
+    </div>
+
+    <div id="diagram-tab" class="tab-panel">
+        <div class="panel-card">
+            <h3 class="section-h">⚙️ Conceptual Architecture Weights Blueprint</h3>
+            <p class="small-muted">Displays hardcoded metric outputs returned by the `/api/architecture` endpoint route.</p>
+            
+            <div class="diag-box" style="margin-top:15px; font-family:monospace; line-height:1.6;">
+                <h4>📡 API Response Metadata payload:</h4>
+                <pre id="architecturePayloadContainer">Fetching data configuration parameters from server endpoint…</pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+</div>
+</div>
+
+<script>
+// Tab View Switching Controller Logic
+function switchTab(tabId) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(tabId).classList.add('active');
+    event.currentTarget.classList.add('active');
+    
+    // Lazy-load heavier visual assets as tabs are opened
+    if(tabId === 'heatmap-tab') { loadGenomeTrack(); }
+    if(tabId === 'matrix-tab') { loadAttentionMatrix(); }
+    if(tabId === 'analytics-tab') { loadHistoricalAnalytics(); }
+    if(tabId === 'diagram-tab') { loadArchitectureDiagram(); }
+}
+
+// Check Backend Connectivity Status
+async function checkBackend() {
+    const statusText = document.getElementById('backendStatus');
+    try {
+        const res = await fetch('http://127.0.0.1:5003/api/health');
+        if (res.ok) {
+            statusText.textContent = "● Connected to Flask backend API local server (Port 5003)";
+            statusText.style.color = "var(--green)";
+            executeSinglePrediction();
+        } else {
+            throw new Error();
+        }
+    } catch(e) {
+        statusText.textContent = "● Backend Disconnected. Ensure Python app.py is running on port 5003";
+        statusText.style.color = "var(--red)";
+    }
+}
+
+// TAB 1: Single Prediction Evaluator
+async function executeSinglePrediction() {
+    const grna = document.getElementById('predict_grna').value.trim();
+    const target = document.getElementById('predict_target').value.trim();
+    const errorBox = document.getElementById('predictError');
+    errorBox.style.display = 'none';
+
+    try {
+        const res = await fetch('http://127.0.0.1:5003/api/predict', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ grna, target })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+            errorBox.textContent = data.error || "Evaluation failed.";
+            errorBox.style.display = 'block';
+            return;
+        }
+        renderSingleResults(data);
+    } catch(e) {
+        errorBox.textContent = "Could not communicate with backend API server.";
+        errorBox.style.display = 'block';
+    }
+}
+
+function renderSingleResults(data) {
+    document.getElementById('riskScorePercent').textContent = `${data.risk_score.toFixed(1)}%`;
+    const rBadge = document.getElementById('riskBadgeValue');
+    rBadge.textContent = data.classification.toUpperCase();
+    rBadge.className = 'risk-badge';
+    if(data.classification === 'Low Risk') rBadge.classList.add('badge-low');
+    else if(data.classification === 'Medium Risk') rBadge.classList.add('badge-med');
+    else rBadge.classList.add('badge-high');
+
+    document.getElementById('reasoningText').textContent = data.reasoning;
+
+    const pamBox = document.getElementById('pamBadgeContainer');
+    if(data.pam_check.valid) {
+        pamBox.innerHTML = `<div class="pam-badge valid">Valid PAM Match Found: <code>${data.pam_check.pam}</code> — SpCas9 active.</div>`;
+    } else {
+        pamBox.innerHTML = `<div class="pam-badge invalid">Invalid PAM Variant: <code>${data.pam_check.pam || 'N/A'}</code> — Binding inhibited.</div>`;
+    }
+
+    const strip = document.getElementById('mismatchStripContainer');
+    strip.innerHTML = '';
+    data.mismatch_profile.forEach(pos => {
+        const baseBox = document.createElement('div');
+        baseBox.className = `mismatch-base ${pos.match ? 'match' : 'mismatch'}`;
+        baseBox.innerHTML = `<div>${pos.target_base}</div><div class="pos-label">${pos.pos + 1}</div>`;
+        strip.appendChild(baseBox);
+    });
+
+    const gaugeData = [{
+        domain: { x: [0, 1], y: [0, 1] },
+        value: data.risk_score,
+        title: { text: "Simulated Risk Index", font: { size: 12, color: "#8A99AD" } },
+        type: "indicator",
+        mode: "gauge+number",
+        number: { font: { color: '#FFF' } },
+        gauge: {
+            axis: { range: [0, 100], tickwidth: 1, tickcolor: "#8A99AD" },
+            bar: { color: data.color },
+            bgcolor: "rgba(255,255,255,0.05)",
+            borderwidth: 1,
+            bordercolor: "rgba(255,255,255,0.1)"
+        }
+    }];
+    Plotly.newPlot('gaugePlot', gaugeData, {margin: { t: 30, b: 10, l: 30, r: 30 }, paper_bgcolor: 'transparent', plot_bgcolor: 'transparent', font: { color: "#FFF" }}, {responsive: true, displayModeBar: false});
+
+    const variants = Object.keys(data.model_breakdown);
+    const scores = Object.values(data.model_breakdown);
+    const breakdownData = [{
+        x: scores, y: variants, type: 'bar', orientation: 'h',
+        marker: { color: ['#32C766', '#FFB300', '#00F2FE'] }
+    }];
+    Plotly.newPlot('breakdownPlot', breakdownData, {margin: { t: 10, b: 30, l: 220, r: 20 }, paper_bgcolor: 'transparent', plot_bgcolor: 'transparent', xaxis: { range: [0, 100], gridcolor: 'rgba(255,255,255,0.05)', tickfont: {color: '#8A99AD'} }, yaxis: { tickfont: {color: '#FFF', size: 10} }}, {responsive: true, displayModeBar: false});
+}
+
+// TAB 2: Multi-Sequence Candidate Comparator
+async function executeRanking() {
+    const grna = document.getElementById('rank_grna').value.trim();
+    const candidatesText = document.getElementById('rank_candidates').value.trim();
+    const errorBox = document.getElementById('rankError');
+    const container = document.getElementById('rankingListContainer');
+    const detailCard = document.getElementById('candidateDetailCard');
+
+    errorBox.style.display = 'none';
+    detailCard.style.display = 'none';
+    container.innerHTML = '<p class="small-muted">Processing sequences through simulation engine...</p>';
+
+    if (!grna || !candidatesText) {
+        showRankError("Both gRNA and candidate targets are required.");
+        return;
+    }
+    const candidates = candidatesText.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+
+    try {
+        const response = await fetch('http://127.0.0.1:5003/api/compare', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ grna, candidates })
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            showRankError(data.error || "Failed to calculate ranking.");
+            return;
+        }
+        renderRankings(data.results);
+    } catch (err) {
+        showRankError("Backend server connection failed.");
+    }
+}
+
+function showRankError(msg) {
+    const errorBox = document.getElementById('rankError');
+    errorBox.textContent = msg;
+    errorBox.style.display = 'block';
+    document.getElementById('rankingListContainer').innerHTML = '';
+}
+
+function renderRankings(results) {
+    const container = document.getElementById('rankingListContainer');
+    container.innerHTML = '';
+    if (results.length === 0) {
+        container.innerHTML = '<p class="small-muted">No valid candidates evaluated.</p>';
+        return;
+    }
+    results.forEach((item) => {
+        let pillClass = 'safe'; let badgeClass = 'badge-low';
+        if (item.classification === 'Medium Risk') { pillClass = 'medium'; badgeClass = 'badge-med'; }
+        if (item.classification === 'High Risk') { pillClass = 'risky'; badgeClass = 'badge-high'; }
+
+        const row = document.createElement('div');
+        row.className = `rank-pill ${pillClass}`;
+        row.style.width = '100%'; row.style.display = 'flex'; row.style.flexDirection = 'row';
+        row.style.alignItems = 'center'; row.style.justifyContent = 'space-between';
+        row.style.padding = '12px 16px'; row.style.marginBottom = '4px';
+
+        row.innerHTML = `
+            <div style="display:flex; align-items:center; gap:12px;">
+                <span class="rank-num">#${item.rank}</span>
+                <code style="font-size:0.95rem; letter-spacing:1px; background: rgba(0,0,0,0.2); padding: 2px 6px; border-radius:4px;">${item.candidate}</code>
+            </div>
+            <div style="display:flex; align-items:center; gap:12px;">
+                <span class="small-muted">Conf: <b>${item.confidence.toFixed(1)}%</b></span>
+                <span class="risk-badge ${badgeClass}" style="padding:4px 10px; font-size:0.75rem;">Score: ${item.risk}%</span>
+            </div>
+        `;
+        row.onclick = () => showCandidateDetails(item);
+        container.appendChild(row);
+    });
+}
+
+function showCandidateDetails(item) {
+    const detailCard = document.getElementById('candidateDetailCard');
+    const content = document.getElementById('candidateDetailContent');
+    const pamStatus = item.pam_valid 
+        ? `<span class="pam-badge valid">Valid PAM Pattern Found (<code>${item.pam}</code>)</span>`
+        : `<span class="pam-badge invalid">Missing/Invalid PAM (<code>${item.pam || 'N/A'}</code>) — Risk Capped Low</span>`;
+
+    content.innerHTML = `
+        <p style="margin: 6px 0;"><b>Sequence Strands:</b> <code>${item.candidate}</code></p>
+        <p style="margin: 6px 0;"><b>Simulated Accuracy Score:</b> ${item.confidence.toFixed(1)}%</p>
+        <p style="margin: 6px 0;"><b>Seed Positional Penalty Metric:</b> ${item.seed_weighted_penalty}</p>
+        <p style="margin: 6px 0;"><b>Predicted Simulated Hotspots:</b> ${item.hotspots}</p>
+        <div style="margin-top:10px;">${pamStatus}</div>
+    `;
+    detailCard.style.display = 'block';
+}
+
+// TAB 3: Attention Matrix Generator Mock
+// TAB 3: Attention Matrix Generator Mock// TAB 3: Attention Matrix Generator Mock
+async function loadAttentionMatrix() {
+    const container = document.getElementById('matrixGridContainer');
+    const sequenceInput = document.getElementById('matrix_seed').value.trim();
+    if(!sequenceInput) return;
+
+    try {
+        const res = await fetch('http://127.0.0.1:5003/api/attention-matrix', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ sequence: sequenceInput })
+        });
+        const data = await res.json();
+        
+        container.innerHTML = '';
+        container.style.gridTemplateColumns = `repeat(${data.matrix.length}, 1fr)`;
+        
+        data.matrix.forEach((row, rIdx) => {
+            row.forEach((val, cIdx) => {
+                const cell = document.createElement('div');
+                cell.className = 'matrix-cell';
+                
+                const intensity = Math.min(1, val * 2.5);
+                cell.style.backgroundColor = `rgba(0, 242, 254, ${intensity})`;
+                cell.style.border = '1px solid rgba(255,255,255,0.02)';
+                cell.title = `Row ${rIdx}, Col ${cIdx}: ${val.toFixed(3)}`;
+                
+                container.appendChild(cell);
+            });
+        });
+    } catch(e) {
+        container.innerHTML = '';
+        for (let i = 0; i < 400; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'matrix-cell';
+            cell.style.backgroundColor = `rgba(0, 242, 254, ${Math.random() * 0.3})`;
+            container.appendChild(cell);
+        }
+    }
+}
+
+// TAB 4: Genome Track Heatmap
+async function loadGenomeTrack() {
+    const chr = document.getElementById('chromSelect').value;
+    try {
+        const res = await fetch(`http://127.0.0.1:5003/api/genome-track?chr=${encodeURIComponent(chr)}`);
+        const data = await res.json();
+        const trace = {
+            x: data.coordinates_mb,
+            y: data.synthetic_risk_density,
+            type: 'scatter',
+            mode: 'lines',
+            line: { color: '#00F2FE', width: 2 }
+        };
+        Plotly.newPlot('genomePlot', [trace], {
+            margin: { t: 20, b: 40, l: 40, r: 20 },
+            paper_bgcolor: 'transparent',
+            plot_bgcolor: 'transparent',
+            xaxis: { title: 'Coordinate (Mb)', gridcolor: 'rgba(255,255,255,0.05)', font: {color: '#FFF'} },
+            yaxis: { title: 'Risk Density', gridcolor: 'rgba(255,255,255,0.05)', font: {color: '#FFF'} }
+        }, {responsive: true});
+    } catch(e) {}
+}
+
+// TAB 5: Pipeline Animation Tracker
+let animInterval = null;
+function startPipelineAnimation() {
+    clearInterval(animInterval);
+    const progress = document.getElementById('pipeProgress');
+    const nodes = [document.getElementById('node1'), document.getElementById('node2'), document.getElementById('node3'), document.getElementById('node4')];
+    
+    nodes.forEach(n => n.className = 'pipe-node');
+    progress.style.width = '0%';
+    
+    let pct = 0;
+    animInterval = setInterval(() => {
+        pct += 2;
+        progress.style.width = pct + '%';
+        
+        if(pct >= 0) nodes[0].classList.add('active');
+        if(pct >= 33) { nodes[0].className = 'pipe-node completed'; nodes[1].classList.add('active'); }
+        if(pct >= 66) { nodes[1].className = 'pipe-node completed'; nodes[2].classList.add('active'); }
+        if(pct >= 100) { nodes[2].className = 'pipe-node completed'; nodes[3].className = 'pipe-node completed'; clearInterval(animInterval); }
+    }, 50);
+}
+
+// TAB 6: Historical Analytics Charts
+async function loadHistoricalAnalytics() {
+    try {
+        const res = await fetch('http://127.0.0.1:5003/api/historical-analytics');
+        const data = await res.json();
+        const trace = {
+            x: data.dates, y: data.avg_risk, type: 'scatter', mode: 'lines',
+            name: 'Avg Simulated Risk', line: {color: '#FF3366'}
+        };
+        Plotly.newPlot('historicalPlot', [trace], {
+            margin: { t: 20, b: 40, l: 40, r: 20 },
+            paper_bgcolor: 'transparent',
+            plot_bgcolor: 'transparent',
+            xaxis: { gridcolor: 'rgba(255,255,255,0.05)', font: {color: '#FFF'} },
+            yaxis: { gridcolor: 'rgba(255,255,255,0.05)', font: {color: '#FFF'} }
+        }, {responsive: true});
+    } catch(e) {}
+}
+
+// TAB 7: Architecture Blueprint Logger
+async function loadArchitectureDiagram() {
+    const container = document.getElementById('architecturePayloadContainer');
+    try {
+        const res = await fetch('http://127.0.0.1:5003/api/architecture');
+        const data = await res.json();
+        container.textContent = JSON.stringify(data, null, 4);
+    } catch(e) {
+        container.textContent = "Error loading configuration parameters.";
+    }
+}
+
+// Initialize application lifecycle checks on window mount
+window.onload = () => {
+    checkBackend();
+};
+</script>
+</body>
+</html>
