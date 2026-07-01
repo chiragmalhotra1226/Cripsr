@@ -15,6 +15,7 @@ or biosafety. Real off-target risk assessment requires wet-lab verification
 """
 
 import math
+import os
 import random
 import webbrowser
 from datetime import datetime, timedelta
@@ -22,9 +23,15 @@ from threading import Timer
 
 from flask import Flask, jsonify, request, render_template
 from flask_cors import CORS
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app)  # allow index.html (served from file:// or any localhost port) to call this API
+
+app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-secret-change-me")
+app.config["API_KEY"] = os.getenv("API_KEY", "")
 
 # ----------------------------------------------------------------------------
 # Engine constants — mirrors the weights used in index.html's JS port
